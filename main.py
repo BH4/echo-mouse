@@ -2,8 +2,8 @@ from pynput import mouse, keyboard
 import sys
 
 from PyQt5.QtCore import QSize, Qt, QCoreApplication
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QMenuBar, QMenu, QAction, QFileDialog
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QMenuBar, QMenu, QAction, QFileDialog
+from PyQt5.QtGui import QIcon, QIntValidator, QDoubleValidator
 
 from time import sleep, time
 
@@ -15,9 +15,12 @@ class MainWindow(QMainWindow):
         # Parameters
         self.start_x = 100
         self.start_y = 100
-        self.width = 250
-        self.height = 100
         self.filemenu_height = 25
+        self.button_height = 75
+        self.input_height = 50
+        self.width = 250
+        self.height = self.filemenu_height+self.input_height+self.button_height
+
         self.drag_delay = 0.02
         self.kill_check_delay = 0.02
 
@@ -31,7 +34,7 @@ class MainWindow(QMainWindow):
         # self.scroll = []
         # self.keys = []
         self.verbose = True
-        self.repeats = 10
+        self.repeats = 1
         self.speed_up = 10
 
         self.Controllers()
@@ -71,15 +74,52 @@ class MainWindow(QMainWindow):
         record = QPushButton("Record\nF5", self)
         play = QPushButton("Play\nF6", self)
 
-        # Button shape
-        record.setGeometry(0, self.filemenu_height, self.width//2, self.height-self.filemenu_height)
-        play.setGeometry(self.width//2, self.filemenu_height, self.width//2, self.height-self.filemenu_height)
+        repeats = QLineEdit(str(self.repeats), self)
+        repeat_label = QLabel("Repeats:", self)
+        speed_up = QLineEdit(str(self.speed_up), self)
+        speed_up_label = QLabel("Speed up:", self)
+
+        # Button/slider shape
+        mid = self.width//2
+        record.setGeometry(0, self.filemenu_height, mid, self.button_height)
+        play.setGeometry(mid, self.filemenu_height, mid, self.button_height)
+
+        label_space = 80
+        repeats.setGeometry(label_space-10, self.button_height+self.filemenu_height+10, mid-label_space, 30)
+        repeat_label.setGeometry(20, self.button_height+self.filemenu_height+10, label_space-20, 30)
+
+        speed_up.setGeometry(mid+label_space-12, self.button_height+self.filemenu_height+10, mid-label_space+2, 30)
+        speed_up_label.setGeometry(mid+10, self.button_height+self.filemenu_height+10, label_space-10, 30)
 
         # Connections
         record.clicked.connect(self.record)
         play.clicked.connect(self.play)
 
+        repeats.setValidator(QIntValidator(0, 99999))
+        repeats.editingFinished.connect(self.repeat_changed)
+        speed_up.setValidator(QDoubleValidator(0.0001, 1000.0, 4))
+        speed_up.editingFinished.connect(self.speed_up_changed)
+
+        self.repeats_input = repeats
+        self.speed_up_input = speed_up
+
         self.create_menu_bar()
+
+    def repeat_changed(self):
+        int_value = int(self.repeats_input.text())
+        self.repeats_input.setText(str(int_value))
+        self.repeats = int_value
+
+        if self.verbose:
+            print('Repeats changed to:', self.repeats)
+
+    def speed_up_changed(self):
+        float_val = float(self.speed_up_input.text())
+        self.speed_up_input.setText(str(float_val))
+        self.speed_up = float_val
+
+        if self.verbose:
+            print('Speed up changed to:', self.speed_up)
 
     def create_menu_bar(self):
         menuBar = QMenuBar(self)
@@ -250,7 +290,12 @@ class MainWindow(QMainWindow):
 
         if self.verbose:
             print('Start replay')
-        for i in range(self.repeats):
+
+        # repeats = 0 functions as infinite repeats until stopped.
+        count = -1
+        while self.repeats == 0 or count <= self.repeats:
+            count += 1
+
             for j, click in enumerate(self.clicks):
                 x, y, button, pressed = click
                 if self.check_kill_location():  # kill repeats by moving mouse at all
@@ -266,7 +311,7 @@ class MainWindow(QMainWindow):
                     self.mouse_C.release(button)
 
             if self.verbose:
-                print('Finished replay number', i+1)
+                print('Finished replay number', count+1)
 
 
 app = QApplication(sys.argv)
