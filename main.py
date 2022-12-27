@@ -292,8 +292,8 @@ class MainWindow(QMainWindow):
             print('Start replay')
 
         # repeats = 0 functions as infinite repeats until stopped.
-        count = -1
-        while self.repeats == 0 or count <= self.repeats:
+        count = 0
+        while self.repeats == 0 or count < self.repeats:
             count += 1
 
             for j, click in enumerate(self.clicks):
@@ -311,7 +311,7 @@ class MainWindow(QMainWindow):
                     self.mouse_C.release(button)
 
             if self.verbose:
-                print('Finished replay number', count+1)
+                print('Finished replay number', count)
 
 
 app = QApplication(sys.argv)
