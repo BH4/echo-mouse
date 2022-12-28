@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
         self.filemenu_height = 25
         self.button_height = 75
         self.input_height = 50
-        self.width = 250
+        self.width = 300
         self.height = self.filemenu_height+self.input_height+self.button_height
 
         self.drag_delay = 0.02
@@ -105,13 +105,21 @@ class MainWindow(QMainWindow):
 
         self.create_menu_bar()
 
-    def repeat_changed(self):
-        int_value = int(self.repeats_input.text())
-        self.repeats_input.setText(str(int_value))
-        self.repeats = int_value
+    def change_repeat(self, v):
+        if v == 0:
+            self.repeats_input.setText('Infinite')
+            self.infAct.setChecked(True)
+        else:
+            self.repeats_input.setText(str(v))
+            self.infAct.setChecked(False)
+        self.repeats = v
 
         if self.verbose:
             print('Repeats changed to:', self.repeats)
+
+    def repeat_changed(self):
+        int_value = int(self.repeats_input.text())
+        self.change_repeat(int_value)
 
     def speed_up_changed(self):
         float_val = float(self.speed_up_input.text())
@@ -125,6 +133,7 @@ class MainWindow(QMainWindow):
         menuBar = QMenuBar(self)
         self.setMenuBar(menuBar)
 
+        # File
         fileMenu = QMenu("&File", self)
         menuBar.addMenu(fileMenu)
 
@@ -146,8 +155,23 @@ class MainWindow(QMainWindow):
         exitAct.triggered.connect(self.exitAction)
         fileMenu.addAction(exitAct)
 
-        # settingsMenu = QMenu("&Settings", self)
-        # menuBar.addMenu(settingsMenu)
+        # Settings
+        settingsMenu = QMenu("&Settings", self)
+        menuBar.addMenu(settingsMenu)
+
+        infAct = QAction(QIcon(), '&Infinite', self)
+        infAct.setShortcut('Ctrl+I')
+        infAct.setStatusTip('Infinite Repeats')
+        infAct.triggered.connect(self.infAction)
+        infAct.setCheckable(True)
+        settingsMenu.addAction(infAct)
+        self.infAct = infAct
+
+        # copyPathAct = QAction(QIcon(), '&Copy Full Path', self)
+        # copyPathAct.setShortcut('Ctrl+P')
+        # copyPathAct.setStatusTip('Repeat exact mouse movements')
+        # copyPathAct.triggered.connect(self.copyPathAction)
+        # settingsMenu.addAction(copyPathAct)
 
     def saveAction(self):
         # Make sure recording is off
@@ -211,6 +235,15 @@ class MainWindow(QMainWindow):
 
     def exitAction(self):
         QCoreApplication.quit()
+
+    def infAction(self):
+        if self.repeats > 0:
+            self.change_repeat(0)
+        else:
+            self.change_repeat(1)
+
+    def copyPathAction(self):
+        pass
 
     # pynput
     def on_move(self, x, y):
