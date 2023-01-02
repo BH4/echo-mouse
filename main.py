@@ -4,6 +4,7 @@ import sys
 from PyQt5.QtCore import QSize, Qt, QCoreApplication
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QMenuBar, QMenu, QAction, QFileDialog
 from PyQt5.QtGui import QIcon, QIntValidator, QDoubleValidator
+from threading import Thread
 
 from time import sleep, time
 
@@ -13,19 +14,22 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         # Parameters
+        self.kill_tol = 2
         self.start_x = 100
         self.start_y = 100
         self.filemenu_height = 25
+        self.runtime_height = 25
         self.button_height = 75
         self.input_height = 50
         self.width = 300
-        self.height = self.filemenu_height+self.input_height+self.button_height
+        self.height = self.filemenu_height+self.runtime_height+self.input_height+self.button_height
 
         self.drag_delay = 0.02
         self.kill_check_delay = 0.02
 
         # Variables
         self.recording = False
+        self.playing = False
         self.clicks = []  # Tuples with location and press as True release as False
         self.prev_click_time = None
         self.last_move_loc = None
@@ -70,7 +74,9 @@ class MainWindow(QMainWindow):
         listener_keyboard.start()
 
     def UiComponents(self):
-        # Define buttons
+        # Define elements
+        self.runtime_text = QLabel("Runtime: 0 (s)", self)
+
         record = QPushButton("Record\nF5", self)
         play = QPushButton("Play\nF6", self)
 
@@ -79,17 +85,22 @@ class MainWindow(QMainWindow):
         speed_up = QLineEdit(str(self.speed_up), self)
         speed_up_label = QLabel("Speed up:", self)
 
-        # Button/slider shape
+        # Element shapes
+        curr_top = self.filemenu_height
+        self.runtime_text.setGeometry(20, curr_top, self.width-40, 30)
+
+        curr_top += self.runtime_height
         mid = self.width//2
-        record.setGeometry(0, self.filemenu_height, mid, self.button_height)
-        play.setGeometry(mid, self.filemenu_height, mid, self.button_height)
+        record.setGeometry(0, curr_top, mid, self.button_height)
+        play.setGeometry(mid, curr_top, mid, self.button_height)
 
+        curr_top += self.button_height+10
         label_space = 80
-        repeats.setGeometry(label_space-10, self.button_height+self.filemenu_height+10, mid-label_space, 30)
-        repeat_label.setGeometry(20, self.button_height+self.filemenu_height+10, label_space-20, 30)
+        repeats.setGeometry(label_space-10, curr_top, mid-label_space, 30)
+        repeat_label.setGeometry(20, curr_top, label_space-20, 30)
 
-        speed_up.setGeometry(mid+label_space-12, self.button_height+self.filemenu_height+10, mid-label_space+2, 30)
-        speed_up_label.setGeometry(mid+10, self.button_height+self.filemenu_height+10, label_space-10, 30)
+        speed_up.setGeometry(mid+label_space-12, curr_top, mid-label_space+2, 30)
+        speed_up_label.setGeometry(mid+10, curr_top, label_space-10, 30)
 
         # Connections
         record.clicked.connect(self.record)
@@ -105,6 +116,48 @@ class MainWindow(QMainWindow):
 
         self.create_menu_bar()
 
+    def unit_convert(self, tot_time):
+        # tot_time starts in seconds
+        units = 'seconds'
+        if tot_time > 60:
+            tot_time /= 60
+            units = 'minutes'
+
+            if tot_time > 60:
+                tot_time /= 60
+                units = 'hours'
+
+                if tot_time > 24:
+                    tot_time /= 24
+                    units = 'days'
+
+                    if tot_time > 365.25:
+                        tot_time /= 365.25
+                        units = 'years'
+
+        return str(round(tot_time, 2))+' ('+units+')'
+
+
+
+    def calculate_runtime(self):
+        """
+        Uses the click timing, number of repeats, and speedup fraction to
+        estimate the full runtime and set the label text accordingly.
+
+        Currently doesn't take finite time of code into account
+        """
+        if self.repeats == 0:
+            estimate = "Infinite"
+        else:
+            num_presses = len([x for x in self.clicks if x[3]])
+            drag_delay_time = self.drag_delay*num_presses
+            kill_check_delay = self.kill_check_delay*len(self.clicks)
+            repeat_time = self.repeats*sum(self.timing)/self.speed_up
+            sec_estimate = drag_delay_time+repeat_time+kill_check_delay
+            estimate = self.unit_convert(sec_estimate)  # Gives a string with attached units
+
+        self.runtime_text.setText("Runtime: "+estimate)
+
     def change_repeat(self, v):
         if v == 0:
             self.repeats_input.setText('Infinite')
@@ -117,6 +170,8 @@ class MainWindow(QMainWindow):
         if self.verbose:
             print('Repeats changed to:', self.repeats)
 
+        self.calculate_runtime()
+
     def repeat_changed(self):
         int_value = int(self.repeats_input.text())
         self.change_repeat(int_value)
@@ -128,6 +183,8 @@ class MainWindow(QMainWindow):
 
         if self.verbose:
             print('Speed up changed to:', self.speed_up)
+
+        self.calculate_runtime()
 
     def create_menu_bar(self):
         menuBar = QMenuBar(self)
@@ -297,11 +354,17 @@ class MainWindow(QMainWindow):
 
     def record(self):
         self.recording = not self.recording
-        print('recording is', self.recording)
         if self.recording:
+            print('Starting recording')
             self.clicks = []
             self.prev_click_time = None
             self.timing = []
+
+            self.runtime_text.setText("Runtime: Recording...")
+        else:
+            print('Recording ended')
+
+            self.calculate_runtime()
 
     def check_kill_location(self):
         if self.verbose:
@@ -310,16 +373,29 @@ class MainWindow(QMainWindow):
         if self.last_move_loc is None:
             return False
 
-        if self.mouse_C.position != self.last_move_loc:
+        dx = self.mouse_C.position[0]-self.last_move_loc[0]
+        dy = self.mouse_C.position[1]-self.last_move_loc[1]
+        if dx**2+dy**2 > self.kill_tol**2:
             print('Stopped play')
+            self.playing = False
             return True
         return False
 
     def play(self):
+        if self.playing:
+            return
+
+        self.playing = True
+        thread = Thread(target=self.play_thread)
+        thread.start()
+
+    def play_thread(self):
+        runtime_test = time()
         self.last_move_loc = None
 
         if self.recording:
-            self.record()
+            print('Cannot play while recording')
+            return
 
         if self.verbose:
             print('Start replay')
@@ -331,10 +407,11 @@ class MainWindow(QMainWindow):
 
             for j, click in enumerate(self.clicks):
                 x, y, button, pressed = click
-                if self.check_kill_location():  # kill repeats by moving mouse at all
+                if self.check_kill_location():  # kill repeats by moving mouse
                     return
                 self.mouse_C.position = (x, y)
                 self.last_move_loc = (x, y)
+
                 if j > 0:
                     sleep(self.timing[j-1]/self.speed_up)
                 if pressed:
@@ -345,6 +422,11 @@ class MainWindow(QMainWindow):
 
             if self.verbose:
                 print('Finished replay number', count)
+
+        if self.verbose:
+            print('True runtime:', time()-runtime_test)
+
+        self.playing = False
 
 
 app = QApplication(sys.argv)
