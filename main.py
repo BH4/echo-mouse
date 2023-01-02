@@ -25,13 +25,15 @@ class MainWindow(QMainWindow):
         self.height = self.filemenu_height+self.runtime_height+self.input_height+self.button_height
 
         self.drag_delay = 0.02
-        self.kill_check_delay = 0.02
+        self.kill_check_delay = 0.01
 
         # Variables
         self.recording = False
         self.playing = False
-        self.clicks = []  # Tuples with location and press as True release as False
+        self.curr_pressed = set()
         self.prev_click_time = None
+
+        self.clicks = []  # Tuples with location and press as True release as False
         self.last_move_loc = None
         self.timing = []
         # self.moves = []
@@ -395,6 +397,7 @@ class MainWindow(QMainWindow):
     def play_thread(self):
         runtime_test = time()
         self.last_move_loc = None
+        self.curr_pressed = set()
 
         if self.recording:
             print('Cannot play while recording')
@@ -411,6 +414,9 @@ class MainWindow(QMainWindow):
             for j, click in enumerate(self.clicks):
                 x, y, button, pressed = click
                 if self.check_kill_location():  # kill repeats by moving mouse
+                    # Release buttons that are pressed
+                    for b in self.curr_pressed:
+                        self.mouse_C.release(b)
                     return
                 self.mouse_C.position = (x, y)
                 self.last_move_loc = (x, y)
@@ -419,9 +425,11 @@ class MainWindow(QMainWindow):
                     sleep(self.timing[j-1]/self.speed_up)
                 if pressed:
                     self.mouse_C.press(button)
+                    self.curr_pressed.add(button)
                     sleep(self.drag_delay)
                 else:
                     self.mouse_C.release(button)
+                    self.curr_pressed.discard(button)
 
             if self.verbose:
                 print('Finished replay number', count)
