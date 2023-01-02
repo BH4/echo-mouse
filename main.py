@@ -137,8 +137,6 @@ class MainWindow(QMainWindow):
 
         return str(round(tot_time, 2))+' ('+units+')'
 
-
-
     def calculate_runtime(self):
         """
         Uses the click timing, number of repeats, and speedup fraction to
@@ -176,15 +174,18 @@ class MainWindow(QMainWindow):
         int_value = int(self.repeats_input.text())
         self.change_repeat(int_value)
 
-    def speed_up_changed(self):
-        float_val = float(self.speed_up_input.text())
-        self.speed_up_input.setText(str(float_val))
-        self.speed_up = float_val
+    def change_speed_up(self, v):
+        self.speed_up_input.setText(str(v))
+        self.speed_up = v
 
         if self.verbose:
             print('Speed up changed to:', self.speed_up)
 
         self.calculate_runtime()
+
+    def speed_up_changed(self):
+        float_val = float(self.speed_up_input.text())
+        self.change_speed_up(float_val)
 
     def create_menu_bar(self):
         menuBar = QMenuBar(self)
@@ -274,7 +275,7 @@ class MainWindow(QMainWindow):
             timing = f.readline().strip()[1:-1].split(', ')
             self.timing = [float(x) for x in timing]
             self.repeats = int(f.readline().strip())
-            self.speed_up = int(f.readline().strip())
+            self.speed_up = float(f.readline().strip())
 
             self.clicks = []
             for c in clicks:
@@ -283,6 +284,8 @@ class MainWindow(QMainWindow):
                                    self.button_converter(c[2][1:-1]),
                                    c[3] == 'True'))
 
+        self.change_repeat(self.repeats)
+        self.change_speed_up(self.speed_up)
         if self.verbose:
             print('Data from open file')
             print(self.clicks)
