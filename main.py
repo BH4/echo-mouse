@@ -14,7 +14,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         # Parameters
-        self.kill_tol = 2
+        self.kill_tol = 4
         self.start_x = 100
         self.start_y = 100
         self.filemenu_height = 25
@@ -29,6 +29,7 @@ class MainWindow(QMainWindow):
 
         # Variables
         self.recording = False
+        self.save_path = False
         self.playing = False
         self.curr_pressed = set()
         self.prev_click_time = None
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
         #     on_click=self.on_click,
         #     on_scroll=self.on_scroll)
         listener_mouse = mouse.Listener(
+            on_move=self.on_move,
             on_click=self.on_click)
         listener_mouse.start()
 
@@ -227,11 +229,12 @@ class MainWindow(QMainWindow):
         settingsMenu.addAction(infAct)
         self.infAct = infAct
 
-        # copyPathAct = QAction(QIcon(), '&Copy Full Path', self)
-        # copyPathAct.setShortcut('Ctrl+P')
-        # copyPathAct.setStatusTip('Repeat exact mouse movements')
-        # copyPathAct.triggered.connect(self.copyPathAction)
-        # settingsMenu.addAction(copyPathAct)
+        copyPathAct = QAction(QIcon(), '&Copy Full Path', self)
+        copyPathAct.setShortcut('Ctrl+P')
+        copyPathAct.setStatusTip('Repeat exact mouse movements')
+        copyPathAct.triggered.connect(self.copyPathAction)
+        copyPathAct.setCheckable(True)
+        settingsMenu.addAction(copyPathAct)
 
     def saveAction(self):
         # Make sure recording is off
@@ -264,6 +267,8 @@ class MainWindow(QMainWindow):
             return mouse.Button.right
         elif button_str == "Button.middle":
             return mouse.Button.middle
+        elif button_str == "None":
+            return None
         return mouse.Button.unknown
 
     def openAction(self):
@@ -299,19 +304,37 @@ class MainWindow(QMainWindow):
         QCoreApplication.quit()
 
     def infAction(self):
+        if self.recording:
+            print('Cannot change settings while recording.')
+            return
+
         if self.repeats > 0:
             self.change_repeat(0)
         else:
             self.change_repeat(1)
 
     def copyPathAction(self):
-        pass
+        if self.recording:
+            print('Cannot change settings while recording.')
+            return
+
+        self.save_path = not self.save_path
 
     # pynput
     def on_move(self, x, y):
-        if self.recording:
-            print('Pointer moved to {0}'.format(
-                (x, y)))
+        if self.recording and self.save_path:
+            self.clicks.append((x, y, None, None))
+
+            if self.prev_click_time is None:
+                self.prev_click_time = time()
+            else:
+                t = time()
+                self.timing.append(t-self.prev_click_time)
+                self.prev_click_time = t
+
+            if self.verbose:
+                print('Pointer moved to {0}'.format(
+                    (x, y)))
 
     def on_click(self, x, y, button, pressed):
         if self.recording:
@@ -423,13 +446,14 @@ class MainWindow(QMainWindow):
 
                 if j > 0:
                     sleep(self.timing[j-1]/self.speed_up)
-                if pressed:
-                    self.mouse_C.press(button)
-                    self.curr_pressed.add(button)
-                    sleep(self.drag_delay)
-                else:
-                    self.mouse_C.release(button)
-                    self.curr_pressed.discard(button)
+                if pressed is not None:  # Not just a movement
+                    if pressed:
+                        self.mouse_C.press(button)
+                        self.curr_pressed.add(button)
+                        sleep(self.drag_delay)
+                    else:
+                        self.mouse_C.release(button)
+                        self.curr_pressed.discard(button)
 
             if self.verbose:
                 print('Finished replay number', count)
