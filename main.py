@@ -81,8 +81,8 @@ class MainWindow(QMainWindow):
         # Define elements
         self.runtime_text = QLabel("Runtime: 0 (s)", self)
 
-        record = QPushButton("Record\nF5", self)
-        play = QPushButton("Play\nF6", self)
+        record = QPushButton("Record\nF1", self)
+        play = QPushButton("Play\nF2", self)
 
         repeats = QLineEdit(str(self.repeats), self)
         repeat_label = QLabel("Repeats:", self)
@@ -366,9 +366,9 @@ class MainWindow(QMainWindow):
             print('special key {0} pressed'.format(
                 key))
         """
-        if key == keyboard.Key.f5:
+        if key == keyboard.Key.f1:
             self.record()
-        if key == keyboard.Key.f6:
+        if key == keyboard.Key.f2:
             self.play()
         if key == keyboard.Key.esc:
             self.exitAction()
