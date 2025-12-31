@@ -1,5 +1,6 @@
 from pynput import mouse, keyboard
 import sys
+import os
 
 from PyQt5.QtCore import QSize, Qt, QCoreApplication
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QMenuBar, QMenu, QAction, QFileDialog
@@ -244,9 +245,14 @@ class MainWindow(QMainWindow):
         name = QFileDialog.getSaveFileName(self, 'Save File')
         # There is a better way to ensure the file ext is right.
         name = name[0]
+        if len(name) == 0:
+            if self.verbose:
+                print('No file name given.')
+            return
         if '.' in name:
             name = name.split('.')[0]
         filename = name+'.echo'
+
         with open(filename, 'w') as f:
             # convert button click to reasonable string
             clicks_str = []
@@ -277,6 +283,14 @@ class MainWindow(QMainWindow):
             self.record()
 
         name = QFileDialog.getOpenFileName(self, 'Open File')[0]
+        if not os.path.exists(name):
+            if self.verbose:
+                print('No file opened/found.')
+            return
+        if os.path.splitext(name)[1] != '.echo':
+            if self.verbose:
+                print('File with improper extension not opened.')
+            return
         with open(name, 'r') as f:
             clicks = f.readline().strip()[2:-2].split('), (')
             timing = f.readline().strip()[1:-1].split(', ')
