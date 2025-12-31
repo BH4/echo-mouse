@@ -395,6 +395,7 @@ class MainWindow(QMainWindow):
         #     return False
 
     def record(self):
+        t = time()
         self.recording = not self.recording
         if self.recording:
             print('Starting recording')
@@ -404,6 +405,15 @@ class MainWindow(QMainWindow):
 
             self.runtime_text.setText("Runtime: Recording...")
         else:
+            # If the last click was a release and the time is very close to
+            # the recording stop, then the last 2 clicks were likely on the
+            # record button and should be removed.
+            if t-self.prev_click_time < 0.01 and not self.clicks[-1][3]:
+                self.clicks = self.clicks[:-2]
+                self.timing = self.timing[:-2]
+
+                if self.verbose:
+                    print('Final click removed as it was likely used to end recording.')
             print('Recording ended')
 
             self.calculate_runtime()
