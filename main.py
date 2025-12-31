@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         # Parameters
-        self.kill_tol = 4
+        self.kill_tol = 8
         self.start_x = 100
         self.start_y = 100
         self.filemenu_height = 25
