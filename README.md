@@ -3,6 +3,8 @@ Record a sequence of mouse inputs (an echo) and play them back as needed. Echos 
 
 ## echo-mouse.exe
 Executable file created with Pyinstaller.
+```
 pyinstaller --onefile -w main.py
+```
 
 ![Echo Mouse from the series Owl House](https://static.wikia.nocookie.net/the-owl-house/images/c/cb/Echo_Mouse.png/revision/latest/scale-to-width-down/1000?cb=20211115185335)
