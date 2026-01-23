@@ -1,5 +1,17 @@
 # echo-mouse
-Record a sequence of mouse inputs (an echo) and play them back as needed. Echos can be played back faster or slower and the number of times the echo occurs can also be set to a finite number or set to infinitely repeat. Additionally, recorded inputs and settings can be saved to an "echo" file and loaded back in. While replaying inputs the mouse can be moved in any way to end it, easily preventing any unwanted clicks or to stop an infinite echo. The escape key will also end running echos.
+Record a sequence of mouse inputs (an echo) and play them back in the same sequence. Echos can be played back faster or slower and set to play back any number of times or set to infinitely repeat. Stopping playback early can be done with any mouse movement or the escape key. Additionally, recorded inputs and settings can be saved to an "echo" file to be loaded back in at a future time.
+
+## Example
+
+Orignal usage of downloading pictures from a facebook album (because this is how my family sends pictures to me).
+
+First create the recording
+
+https://github.com/user-attachments/assets/0f2471ed-6abd-4f47-9028-9290fb8719f6
+
+then play back the recording with the required settings
+
+https://github.com/user-attachments/assets/fd3739e0-b1dc-46d5-8205-7fdce79d632b
 
 ## echo-mouse.exe
 Executable file created with Pyinstaller.
