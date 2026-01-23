@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         self.height = self.filemenu_height+self.runtime_height+self.input_height+self.button_height
 
         self.drag_delay = 0.02
+        self.repeat_delay = 0.02
         self.kill_check_delay = 0.01
 
         # Variables
@@ -154,9 +155,10 @@ class MainWindow(QMainWindow):
         else:
             num_presses = len([x for x in self.clicks if x[3]])
             drag_delay_time = self.drag_delay*num_presses
+            repeat_delay_time = self.repeat_delay*(num_presses-1)
             kill_check_delay = self.kill_check_delay*len(self.clicks)
             repeat_time = self.repeats*sum(self.timing)/self.speed_up
-            sec_estimate = drag_delay_time+repeat_time+kill_check_delay
+            sec_estimate = drag_delay_time+repeat_delay_time+repeat_time+kill_check_delay
             estimate = self.unit_convert(sec_estimate)  # Gives a string with attached units
 
         self.runtime_text.setText("Runtime: "+estimate)
@@ -478,6 +480,8 @@ class MainWindow(QMainWindow):
                     else:
                         self.mouse_C.release(button)
                         self.curr_pressed.discard(button)
+
+            sleep(self.repeat_delay)
 
             if self.verbose:
                 print('Finished replay number', count)
