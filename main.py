@@ -408,7 +408,7 @@ class MainWindow(QMainWindow):
             # If the last click was a release and the time is very close to
             # the recording stop, then the last 2 clicks were likely on the
             # record button and should be removed.
-            if t-self.prev_click_time < 0.01 and not self.clicks[-1][3]:
+            if self.prev_click_time is not None and (t-self.prev_click_time < 0.01 and not self.clicks[-1][3]):
                 self.clicks = self.clicks[:-2]
                 self.timing = self.timing[:-2]
 
