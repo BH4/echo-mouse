@@ -387,7 +387,10 @@ class MainWindow(QMainWindow):
         if key == keyboard.Key.f2:
             self.play()
         if key == keyboard.Key.esc:
-            self.exitAction()
+            if self.playing:
+                self.playing = False
+            else:
+                self.exitAction()
 
     def on_release(self, key):
         print('{0} released'.format(
@@ -430,7 +433,6 @@ class MainWindow(QMainWindow):
         dx = self.mouse_C.position[0]-self.last_move_loc[0]
         dy = self.mouse_C.position[1]-self.last_move_loc[1]
         if dx**2+dy**2 > self.kill_tol**2:
-            print('Stopped play')
             self.playing = False
             return True
         return False
@@ -462,8 +464,10 @@ class MainWindow(QMainWindow):
 
             for j, click in enumerate(self.clicks):
                 x, y, button, pressed = click
-                if self.check_kill_location():  # kill repeats by moving mouse
+                # kill repeats by moving mouse or pressing esc
+                if self.check_kill_location() or not self.playing:
                     # Release buttons that are pressed
+                    print('Stopped play')
                     for b in self.curr_pressed:
                         self.mouse_C.release(b)
                     return
