@@ -293,19 +293,29 @@ class MainWindow(QMainWindow):
             if self.verbose:
                 print('File with improper extension not opened.')
             return
-        with open(name, 'r') as f:
-            clicks = f.readline().strip()[2:-2].split('), (')
-            timing = f.readline().strip()[1:-1].split(', ')
-            self.timing = [float(x) for x in timing]
-            self.repeats = int(f.readline().strip())
-            self.speed_up = float(f.readline().strip())
+        try:
+            with open(name, 'r') as f:
+                clicks = f.readline().strip()[2:-2].split('), (')
+                timing = f.readline().strip()[1:-1].split(', ')
+                timing = [float(x) for x in timing]
+                repeats = int(f.readline().strip())
+                speed_up = float(f.readline().strip())
 
-            self.clicks = []
-            for c in clicks:
-                c = c.split(', ')
-                self.clicks.append((int(c[0]), int(c[1]),
-                                   self.button_converter(c[2][1:-1]),
-                                   c[3] == 'True'))
+                loaded_clicks = []
+                for c in clicks:
+                    c = c.split(', ')
+                    loaded_clicks.append((int(c[0]), int(c[1]),
+                                          self.button_converter(c[2][1:-1]),
+                                          c[3] == 'True'))
+        except (IndexError, ValueError):
+            if self.verbose:
+                print('File with improper formatting not opened.')
+            return
+
+        self.timing = timing
+        self.repeats = repeats
+        self.speed_up = speed_up
+        self.clicks = loaded_clicks
 
         self.change_repeat(self.repeats)
         self.change_speed_up(self.speed_up)
