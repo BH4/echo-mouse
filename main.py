@@ -446,13 +446,15 @@ class MainWindow(QMainWindow):
         thread.start()
 
     def play_thread(self):
+
+        if self.recording:
+            self.playing = False
+            print('Cannot play while recording')
+            return
+
         runtime_test = time()
         self.last_move_loc = None
         self.curr_pressed = set()
-
-        if self.recording:
-            print('Cannot play while recording')
-            return
 
         if self.verbose:
             print('Start replay')
