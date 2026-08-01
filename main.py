@@ -154,11 +154,11 @@ class MainWindow(QMainWindow):
             estimate = "Infinite"
         else:
             num_presses = len([x for x in self.clicks if x[3]])
-            drag_delay_time = self.drag_delay*num_presses
-            repeat_delay_time = self.repeat_delay*(num_presses-1)
-            kill_check_delay = self.kill_check_delay*len(self.clicks)
-            repeat_time = self.repeats*sum(self.timing)/self.speed_up
-            sec_estimate = drag_delay_time+repeat_delay_time+repeat_time+kill_check_delay
+            replay_time = sum(self.timing)/self.speed_up
+            replay_time += self.drag_delay*num_presses
+            replay_time += self.repeat_delay
+            replay_time += self.kill_check_delay*len(self.clicks)
+            sec_estimate = self.repeats*replay_time
             estimate = self.unit_convert(sec_estimate)  # Gives a string with attached units
 
         self.runtime_text.setText("Runtime: "+estimate)
