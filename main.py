@@ -9,6 +9,8 @@ from threading import Thread
 
 from time import sleep, time
 
+from bin.echo_io import save_echo, load_echo
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -255,60 +257,36 @@ class MainWindow(QMainWindow):
             name = name.split('.')[0]
         filename = name+'.echo'
 
-        with open(filename, 'w') as f:
-            # convert button click to reasonable string
-            clicks_str = []
-            for c in self.clicks:
-                clicks_str.append((c[0], c[1], str(c[2]), c[3]))
-            f.write(str(clicks_str)+'\n')
-            f.write(str(self.timing)+'\n')
-            f.write(str(self.repeats)+'\n')
-            f.write(str(self.speed_up)+'\n')
-
-    def button_converter(self, button_str):
-        """
-        Takes in a string like Button.left and returns the correct object
-        """
-        if button_str == "Button.left":
-            return mouse.Button.left
-        elif button_str == "Button.right":
-            return mouse.Button.right
-        elif button_str == "Button.middle":
-            return mouse.Button.middle
-        elif button_str == "None":
-            return None
-        return mouse.Button.unknown
+        save_echo(filename, self.clicks, self.timing, self.repeats, self.speed_up)
 
     def openAction(self):
         # Make sure recording is off
         if self.recording:
             self.record()
 
-        name = QFileDialog.getOpenFileName(self, 'Open File')[0]
-        if not os.path.exists(name):
+        filename = QFileDialog.getOpenFileName(self, 'Open File')[0]
+        if not os.path.exists(filename):
             if self.verbose:
                 print('No file opened/found.')
             return
-        if os.path.splitext(name)[1] != '.echo':
+        if os.path.splitext(filename)[1] != '.echo':
             if self.verbose:
                 print('File with improper extension not opened.')
             return
-        with open(name, 'r') as f:
-            clicks = f.readline().strip()[2:-2].split('), (')
-            timing = f.readline().strip()[1:-1].split(', ')
-            self.timing = [float(x) for x in timing]
-            self.repeats = int(f.readline().strip())
-            self.speed_up = float(f.readline().strip())
 
-            self.clicks = []
-            for c in clicks:
-                c = c.split(', ')
-                self.clicks.append((int(c[0]), int(c[1]),
-                                   self.button_converter(c[2][1:-1]),
-                                   c[3] == 'True'))
+        try:
+            data = load_echo(filename)
+        except ValueError as e:
+            if self.verbose:
+                print(e)
+            return
 
-        self.change_repeat(self.repeats)
-        self.change_speed_up(self.speed_up)
+        clicks, timing, repeats, speed_up = data
+        self.clicks = clicks
+        self.timing = timing
+        self.change_repeat(repeats)
+        self.change_speed_up(speed_up)
+
         if self.verbose:
             print('Data from open file')
             print(self.clicks)
