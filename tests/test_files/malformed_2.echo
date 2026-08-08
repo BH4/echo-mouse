@@ -1,0 +1,64 @@
+{
+    "format": "echo_data",
+    "version": 1,
+    "clicks": [
+        [
+            627,
+            19,
+            "Button.left",
+            true
+        ],
+        [
+            627,
+            19,
+            "Button.left",
+            false
+        ],
+        [
+            994,
+            18,
+            "Button.left",
+            true
+        ],
+        [
+            994,
+            17,
+            "Button.left",
+            false
+        ],
+        [
+            651,
+            24,
+            "Button.left",
+            true
+        ],
+        [
+            651,
+            24,
+            "Button.left",
+            false
+        ],
+        [
+            1015,
+            29,
+            "Button.left",
+            true
+        ],
+        [
+            1015,
+            29,
+            "Button.left",
+            false
+        ]
+    ],
+    "timing": [
+        0.07245278358459473,
+        0.7900454998016357,
+        0.07219195365905762,
+        0.5075364112854004,
+        0.09609818458557129,
+        0.6821911334991455
+    ],
+    "repeats": 124,
+    "speed_up": 35.0
+}

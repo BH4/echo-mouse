@@ -2,7 +2,7 @@ from pynput import mouse, keyboard
 import sys
 import os
 
-from PyQt5.QtCore import QSize, Qt, QCoreApplication
+from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QMenuBar, QMenu, QAction, QFileDialog
 from PyQt5.QtGui import QIcon, QIntValidator, QDoubleValidator
 from threading import Thread
@@ -16,7 +16,22 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # Parameters
+        self.set_parameters()
+        self.init_runtime_variables()
+
+        self.Controllers()
+        self.Listeners()
+
+        # GUI
+        self.setWindowTitle("Echo Mouse")
+        self.setGeometry(self.start_x, self.start_y, self.width, self.height)
+
+        # self.setAttribute(Qt.WA_TranslucentBackground, True)
+
+        self.UiComponents()
+        self.show()
+
+    def set_parameters(self):
         self.kill_tol = 8
         self.start_x = 100
         self.start_y = 100
@@ -31,7 +46,7 @@ class MainWindow(QMainWindow):
         self.repeat_delay = 0.02
         self.kill_check_delay = 0.01
 
-        # Variables
+    def init_runtime_variables(self):
         self.recording = False
         self.save_path = False
         self.playing = False
@@ -41,24 +56,11 @@ class MainWindow(QMainWindow):
         self.clicks = []  # Tuples with location and press as True release as False
         self.last_move_loc = None
         self.timing = []
-        # self.moves = []
         # self.scroll = []
         # self.keys = []
         self.verbose = True
         self.repeats = 1
         self.speed_up = 10
-
-        self.Controllers()
-        self.Listeners()
-
-        # GUI
-        self.setWindowTitle("Echo Mouse")
-        self.setGeometry(self.start_x, self.start_y, self.width, self.height)
-
-        # self.setAttribute(Qt.WA_TranslucentBackground, True)
-
-        self.UiComponents()
-        self.show()
 
     def Controllers(self):
         self.mouse_C = mouse.Controller()
@@ -83,7 +85,7 @@ class MainWindow(QMainWindow):
 
     def UiComponents(self):
         # Define elements
-        self.runtime_text = QLabel("Runtime: 0 (s)", self)
+        self.run_length_text = QLabel("Runtime: 0 (s)", self)
 
         record = QPushButton("Record\nF1", self)
         play = QPushButton("Play\nF2", self)
@@ -95,7 +97,7 @@ class MainWindow(QMainWindow):
 
         # Element shapes
         curr_top = self.filemenu_height
-        self.runtime_text.setGeometry(20, curr_top, self.width-40, 30)
+        self.run_length_text.setGeometry(20, curr_top, self.width-40, 30)
 
         curr_top += self.runtime_height
         mid = self.width//2
@@ -145,25 +147,31 @@ class MainWindow(QMainWindow):
 
         return str(round(tot_time, 2))+' ('+units+')'
 
-    def calculate_runtime(self):
+    def set_run_length(self):
+        if self.repeats == 0:
+            estimate = "Infinite"
+        else:
+            estimate = self.calculate_run_length()
+
+        self.run_length_text.setText("Runtime: "+estimate)
+
+    def calculate_run_length(self):
         """
         Uses the click timing, number of repeats, and speedup fraction to
         estimate the full runtime and set the label text accordingly.
 
         Currently doesn't take finite time of code into account
         """
-        if self.repeats == 0:
-            estimate = "Infinite"
-        else:
-            num_presses = len([x for x in self.clicks if x[3]])
-            replay_time = sum(self.timing)/self.speed_up
-            replay_time += self.drag_delay*num_presses
-            replay_time += self.repeat_delay
-            replay_time += self.kill_check_delay*len(self.clicks)
-            sec_estimate = self.repeats*replay_time
-            estimate = self.unit_convert(sec_estimate)  # Gives a string with attached units
 
-        self.runtime_text.setText("Runtime: "+estimate)
+        num_presses = len([x for x in self.clicks if x[3]])
+        replay_time = sum(self.timing)/self.speed_up
+        replay_time += self.drag_delay*num_presses
+        replay_time += self.repeat_delay
+        replay_time += self.kill_check_delay*len(self.clicks)
+        sec_estimate = self.repeats*replay_time
+        estimate = self.unit_convert(sec_estimate)  # Gives a string with attached units
+
+        return estimate
 
     def change_repeat(self, v):
         if v == 0:
@@ -177,7 +185,7 @@ class MainWindow(QMainWindow):
         if self.verbose:
             print('Repeats changed to:', self.repeats)
 
-        self.calculate_runtime()
+        self.set_run_length()
 
     def repeat_changed(self):
         int_value = int(self.repeats_input.text())
@@ -190,7 +198,7 @@ class MainWindow(QMainWindow):
         if self.verbose:
             print('Speed up changed to:', self.speed_up)
 
-        self.calculate_runtime()
+        self.set_run_length()
 
     def speed_up_changed(self):
         float_val = float(self.speed_up_input.text())
@@ -386,7 +394,7 @@ class MainWindow(QMainWindow):
             self.prev_click_time = None
             self.timing = []
 
-            self.runtime_text.setText("Runtime: Recording...")
+            self.run_length_text.setText("Runtime: Recording...")
         else:
             # If the last click was a release and the time is very close to
             # the recording stop, then the last 2 clicks were likely on the
@@ -399,7 +407,7 @@ class MainWindow(QMainWindow):
                     print('Final click removed as it was likely used to end recording.')
             print('Recording ended')
 
-            self.calculate_runtime()
+            self.set_run_length()
 
     def check_kill_location(self):
         if self.verbose:
@@ -476,6 +484,7 @@ class MainWindow(QMainWindow):
         self.playing = False
 
 
-app = QApplication(sys.argv)
-window = MainWindow()
-app.exec()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    app.exec()

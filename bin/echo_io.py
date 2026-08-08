@@ -81,9 +81,9 @@ def load_echo(filename):
         else:
             click[2] = button_converter(click[2])
 
-    if not isinstance(timing, list) or not all(
-        isinstance(x, (int, float)) for x in timing
-    ):
+    if (not isinstance(timing, list) or
+            not all(isinstance(x, (int, float)) for x in timing) or
+            not len(timing) == len(clicks)-1):
         raise ValueError("Invalid timing")
 
     if not isinstance(repeats, int):

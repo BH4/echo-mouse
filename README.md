@@ -13,10 +13,20 @@ then play back the recording with the required settings
 
 https://github.com/user-attachments/assets/fd3739e0-b1dc-46d5-8205-7fdce79d632b
 
+
+## Development
+Feel free to suggest changes or open pull requests. Test files can be run with
+```
+python3 -m unittest discover -v
+```
+
 ## echo-mouse.exe
 Executable file created with Pyinstaller.
 ```
 pyinstaller --onefile -w main.py
 ```
 
+
 ![Echo Mouse from the series Owl House](https://static.wikia.nocookie.net/the-owl-house/images/c/cb/Echo_Mouse.png/revision/latest/scale-to-width-down/1000?cb=20211115185335)
+
+
