@@ -1,0 +1,9 @@
+[project]
+name = "echo-mouse"
+version = "0.1.0"
+requires-python = ">=3.15"
+dependencies = [
+    "pynput>=1.8.2",
+    "pyqt5==5.15.11",
+    "pyqt5-qt5==5.15.2",
+]
